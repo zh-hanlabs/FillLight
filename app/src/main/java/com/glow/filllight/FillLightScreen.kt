@@ -46,7 +46,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -77,6 +81,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -287,6 +292,7 @@ private fun ControlPanel(
     onPicking: (Boolean) -> Unit,
 ) {
     val focusState = remember { PanelFocusState() }
+    var showKelvinEditor by rememberSaveable { mutableStateOf(false) }
     CompositionLocalProvider(LocalPanelFocus provides focusState) {
         Column(
             Modifier
@@ -444,7 +450,13 @@ private fun ControlPanel(
                 Box(Modifier.fillMaxWidth().focusBlur("kelvin")) {
                     Column {
                         Row(
-                            Modifier.align(Alignment.CenterHorizontally),
+                            Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.06f))
+                                .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape)
+                                .pointerInput(Unit) { detectTapGestures { showKelvinEditor = true } }
+                                .padding(start = 16.dp, end = 12.dp, top = 2.dp, bottom = 2.dp),
                             verticalAlignment = Alignment.Bottom,
                         ) {
                             Text(
@@ -460,6 +472,12 @@ private fun ControlPanel(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(bottom = 3.dp),
+                            )
+                            Text(
+                                "输入",
+                                color = PanelDimText.copy(alpha = 0.7f),
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(start = 8.dp, bottom = 5.dp),
                             )
                         }
                         Spacer(Modifier.height(10.dp))
@@ -541,6 +559,57 @@ private fun ControlPanel(
             }
         }
     }
+
+    if (showKelvinEditor) {
+        KelvinInputDialog(
+            current = kelvin,
+            onConfirm = {
+                onKelvin(it)
+                showKelvinEditor = false
+            },
+            onDismiss = { showKelvinEditor = false },
+        )
+    }
+}
+
+/** 色温手动输入：范围外自动钳制到 1500–9000K */
+@Composable
+private fun KelvinInputDialog(
+    current: Int,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf(current.toString()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("输入色温") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.filter { c -> c.isDigit() }.take(4) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    suffix = { Text("K", color = PanelDimText) },
+                    singleLine = true,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "范围 1500 – 9000 K，超出将自动取边界值",
+                    color = PanelDimText,
+                    fontSize = 12.sp,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val v = text.toIntOrNull()
+                if (v != null) onConfirm(v.coerceIn(1500, 9000)) else onDismiss()
+            }) { Text("确定") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        },
+    )
 }
 
 /** 模式选择：胶囊轨道 + 白色滑块平滑滑过 */
@@ -653,7 +722,8 @@ private fun CapsuleSlider(
     val currentOnChange by rememberUpdatedState(onValueChange)
     val currentPicking by rememberUpdatedState(onPicking)
     fun fractionAt(x: Float) = if (widthPx > 0f) (x / widthPx).coerceIn(0f, 1f) else 0f
-    val inset = 10.dp
+    // 手柄半径 11dp：内缩 13dp 保证端点处手柄完全收进胶囊，不越界
+    val inset = 13.dp
     Box(
         modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
@@ -723,10 +793,10 @@ private fun CapsuleSlider(
                     )
                 }
                 .size(22.dp)
-                .shadow(3.dp, CircleShape)
+                .shadow(4.dp, CircleShape)
                 .clip(CircleShape)
                 .background(Color.White)
-                .border(1.dp, Color.Black.copy(alpha = 0.10f), CircleShape)
+                .border(1.dp, Color.Black.copy(alpha = 0.22f), CircleShape)
         )
     }
 }
