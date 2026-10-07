@@ -336,6 +336,7 @@ private fun ControlPanel(
                         value = (brightness - 0.05f) / 0.95f,
                         onValueChange = { onBrightness(0.05f + it * 0.95f) },
                         focusId = "brightness",
+                        showHandle = false,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -351,6 +352,7 @@ private fun ControlPanel(
                             value = (strobeHz - 0.5f) / 9.5f,
                             onValueChange = { onStrobeHz(0.5f + it * 9.5f) },
                             focusId = "strobe",
+                            showHandle = false,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -472,12 +474,6 @@ private fun ControlPanel(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(bottom = 3.dp),
-                            )
-                            Text(
-                                "输入",
-                                color = PanelDimText.copy(alpha = 0.7f),
-                                fontSize = 10.sp,
-                                modifier = Modifier.padding(start = 8.dp, bottom = 5.dp),
                             )
                         }
                         Spacer(Modifier.height(10.dp))
@@ -707,6 +703,7 @@ private fun CapsuleSlider(
     onPicking: ((Boolean) -> Unit)? = null,
     focusId: String? = null,
     pressScale: Float = 1.06f,
+    showHandle: Boolean = true,
     fillBrush: Brush? = Brush.horizontalGradient(listOf(Color.White, Color.White)),
     trackContent: (@Composable BoxScope.() -> Unit)? = null,
 ) {
@@ -781,23 +778,25 @@ private fun CapsuleSlider(
                     .background(fillBrush)
             )
         }
-        // 手柄
-        Box(
-            Modifier
-                .align(Alignment.CenterStart)
-                .offset {
-                    IntOffset(
-                        (inset.toPx() + currentValue * (widthPx - 2 * inset.toPx()) - 11.dp.toPx())
-                            .roundToInt(),
-                        0,
-                    )
-                }
-                .size(22.dp)
-                .shadow(4.dp, CircleShape)
-                .clip(CircleShape)
-                .background(Color.White)
-                .border(1.dp, Color.Black.copy(alpha = 0.22f), CircleShape)
-        )
+        // 手柄（无填充的渐变轨道需要它指示位置；白色填充轨道可省略）
+        if (showHandle) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .offset {
+                        IntOffset(
+                            (inset.toPx() + currentValue * (widthPx - 2 * inset.toPx()) - 11.dp.toPx())
+                                .roundToInt(),
+                            0,
+                        )
+                    }
+                    .size(22.dp)
+                    .shadow(4.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .border(1.dp, Color.Black.copy(alpha = 0.22f), CircleShape)
+            )
+        }
     }
 }
 
