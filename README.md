@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="https://github.com/zh-hanlabs/FillLight/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/zh-hanlabs/FillLight?style=social"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.0-FB6511"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.0"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.1-FB6511"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.1"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
   <a href="https://kotlinlang.org/"><img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white"></a>
   <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-1.7-4285F4?logo=jetpackcompose&logoColor=white"></a>
   <a href="https://developer.android.com/about/versions/oreo"><img alt="MinSdk" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"></a>
@@ -136,7 +136,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 📥 下载安装
 
-前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载 `FillLight-v1.0.0-debug.apk`（9.2MB）：
+前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.1-debug.apk`）：
 
 - 要求 **Android 8.0（API 26）** 及以上
 - debug 签名包，下载后点开安装即可
@@ -146,4 +146,5 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 | 版本 | 日期 | 说明 |
 |---|---|---|
+| v1.0.1 | 2026-10-07 | 色温 K 值手动输入；亮度/频率滑条去手柄（胶囊填充即指示）；修复手柄端点越界与对比度 |
 | v1.0.0 | 2026-10-07 | 首版：全屏补光 / 色温 / 取色轮 / 氛围预设 / 四种灯光模式 / 纯色·拟真灯面 / 玻璃景深面板 / 沉浸式全屏 / 磁贴+小组件 |
