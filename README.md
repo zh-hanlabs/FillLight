@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="https://github.com/zh-hanlabs/FillLight/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/zh-hanlabs/FillLight?style=social"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.1-FB6511"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.1"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.2-FB6511"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.2"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
   <a href="https://kotlinlang.org/"><img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white"></a>
   <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-1.7-4285F4?logo=jetpackcompose&logoColor=white"></a>
   <a href="https://developer.android.com/about/versions/oreo"><img alt="MinSdk" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"></a>
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  🌡️ 色温 1500K–9000K · 🎨 HSV 取色轮 · ✨ 拟真光衰减 · ⚡ 频闪 0.5–10Hz · 🫁 呼吸 · 🆘 SOS · 🧩 磁贴+小组件 · 🔒 零权限零网络
+  🌡️ 色温 1500K–9000K · 🎨 HSV 取色轮 · ✨ 拟真光衰减 · ⚡ 频闪 · 🫁 呼吸 · 🌈 流彩 · 🆘 SOS · ⏱️ 定时关灯 · 🧩 磁贴+小组件 · 🔒 零权限零网络
 </p>
 
 <p align="center">
@@ -46,12 +46,14 @@
 | 色温连续可调 | 1500K（烛光暖黄）~ 9000K（冷白）渐变滑轨 + 大号等宽数字读数；预设：烛光 / 暖白 / 自然白 / 冷白 / 正午 |
 | 任意取色 | 自绘 HSV 取色轮：中心白、边缘全色相，点按/拖动取色，实时显示 HEX 值；旋钮实心显示当前颜色 |
 | 氛围色预设 | 樱花粉、日落橙、蜜桃、薄荷绿、海盐蓝、薰衣草、青柠、玫瑰金，一键切换 |
-| 四种灯光模式 | 常亮 / 频闪（0.5–10 Hz 可调）/ 呼吸（明暗起伏）/ SOS（标准摩尔斯节奏求救灯） |
+| 五种灯光模式 | 常亮 / 频闪（0.5–10 Hz 可调）/ 呼吸（明暗起伏）/ 流彩（色相 14s 循环流动的彩虹灯）/ SOS（标准摩尔斯节奏求救灯） |
+| 定时关灯 | 15 / 30 / 60 分钟倒计时（实时显示剩余），到点渐隐 2.5s 后自动退出——夜灯场景不怕亮一夜 |
+| 防误触锁定 | 双击灯面锁定/解锁；锁定时单击不弹面板，补光时手机立着也不怕误碰 |
 | 两种灯面风格 | **拟真**：中心亮、四角暗的真实光衰减；**纯色**：平涂满屏（手电/最高照度场景） |
 | 玻璃景深面板 | 全自绘控件（胶囊滑条 / 滑块模式切换器 / 预设胶囊）；按住任意控件弹性放大，其余区块虚化压暗退焦，松手回焦 |
 | 实时跟色 | 按住取色轮或色温条时灯光零延迟跟随（动画切即时模式），松手、点预设恢复平滑过渡 |
 | 沉浸式全屏 | 隐藏状态栏/导航栏，边缘轻滑临时唤出；转屏不闪灯，返回键先收面板 |
-| 快捷入口 | 下拉快捷设置「补光灯」磁贴 + 桌面 1x1 小组件，一键直达灯面 |
+| 快捷入口 | 下拉快捷设置「补光灯」磁贴 + 桌面 1x1 小组件 + 长按图标直达「SOS 灯」「夜灯」 |
 | 克制与安全 | **零权限、零网络、零第三方 SDK**；状态随进程恢复，杀掉重开不丢设置 |
 
 <a id="details"></a>
@@ -68,7 +70,9 @@
 - **沉浸式**：`WindowInsetsController` 隐藏 systemBars，`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE` 边缘滑出；`SHORT_EDGES` 铺满挖孔区；`configChanges` 承接转屏，灯面不闪
 - **亮度控制**：`window.screenBrightness` 仅覆盖本 App 窗口（0.05–1.0），系统亮度不受影响；`FLAG_KEEP_SCREEN_ON` 常亮
 - **状态恢复**：全部设置 `rememberSaveable`，进程被杀重开不丢；触感反馈（点选胶囊/切模式）
-- **快捷入口**：`TileService`（ACTIVE_TILE）点击直达；桌面小组件 `RemoteViews` + PendingIntent，无障碍描述齐全
+- **快捷入口**：`TileService`（ACTIVE_TILE）点击直达；桌面小组件 `RemoteViews` + PendingIntent；长按图标快捷方式走 Static Shortcuts，`onNewIntent` 支持运行中即时切换
+- **定时关灯**：结束时刻取 epoch 毫秒存入 `rememberSaveable`——进程被杀重启倒计时依然正确；到点 `Animatable` 渐隐 2.5s 后 `finish()` 退出
+- **流彩模式**：`infiniteTransition` 线性循环色相（14s/圈），颜色动画切 `snap()` 即时跟随；激活时隐藏色温/取色区，灯面风格（拟真/纯色）依然生效
 
 </details>
 
@@ -136,7 +140,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 📥 下载安装
 
-前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.1-debug.apk`）：
+前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.2-debug.apk`）：
 
 - 要求 **Android 8.0（API 26）** 及以上
 - debug 签名包，下载后点开安装即可
@@ -146,5 +150,6 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 | 版本 | 日期 | 说明 |
 |---|---|---|
+| v1.0.2 | 2026-10-07 | 流彩模式 / 定时关灯 / 双击锁定 / 图标快捷方式（SOS·夜灯）/ 锁竖屏 / 面板滚动兜底 / HEX 复制 / 键盘「完成」提交 |
 | v1.0.1 | 2026-10-07 | 色温 K 值手动输入；亮度/频率滑条去手柄（胶囊填充即指示）；修复手柄端点越界与对比度 |
 | v1.0.0 | 2026-10-07 | 首版：全屏补光 / 色温 / 取色轮 / 氛围预设 / 四种灯光模式 / 纯色·拟真灯面 / 玻璃景深面板 / 沉浸式全屏 / 磁贴+小组件 |
