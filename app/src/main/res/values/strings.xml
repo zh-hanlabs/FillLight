@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">补光灯</string>
+    <string name="tile_label">补光灯</string>
+    <string name="widget_label">补光灯</string>
+    <string name="widget_desc">打开补光灯</string>
+</resources>
