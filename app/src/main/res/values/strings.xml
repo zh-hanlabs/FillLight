@@ -4,4 +4,8 @@
     <string name="tile_label">补光灯</string>
     <string name="widget_label">补光灯</string>
     <string name="widget_desc">打开补光灯</string>
+    <string name="shortcut_sos">SOS 灯</string>
+    <string name="shortcut_sos_long">SOS 求救灯</string>
+    <string name="shortcut_night">夜灯</string>
+    <string name="shortcut_night_long">暖光夜灯</string>
 </resources>

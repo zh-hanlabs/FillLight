@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_sos"
+        android:shortcutDisabledMessage="@string/shortcut_sos"
+        android:shortcutId="sos"
+        android:shortcutLongLabel="@string/shortcut_sos_long"
+        android:shortcutShortLabel="@string/shortcut_sos">
+        <intent
+            android:action="com.glow.filllight.ACTION_SOS"
+            android:targetClass="com.glow.filllight.MainActivity"
+            android:targetPackage="com.glow.filllight" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_night"
+        android:shortcutDisabledMessage="@string/shortcut_night"
+        android:shortcutId="night"
+        android:shortcutLongLabel="@string/shortcut_night_long"
+        android:shortcutShortLabel="@string/shortcut_night">
+        <intent
+            android:action="com.glow.filllight.ACTION_NIGHT"
+            android:targetClass="com.glow.filllight.MainActivity"
+            android:targetPackage="com.glow.filllight" />
+    </shortcut>
+</shortcuts>

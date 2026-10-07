@@ -1,10 +1,14 @@
 package com.glow.filllight
 
+import android.app.Activity
 import android.view.Window
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -21,10 +25,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -44,9 +50,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -77,10 +86,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -115,8 +128,17 @@ private class PanelFocusState {
 
 private val LocalPanelFocus = compositionLocalOf { PanelFocusState() }
 
+private fun formatRemaining(ms: Long): String {
+    val total = ((ms + 999) / 1000).toInt().coerceAtLeast(0)
+    return String.format(Locale.US, "%d:%02d", total / 60, total % 60)
+}
+
 @Composable
-fun FillLightScreen(window: Window) {
+fun FillLightScreen(
+    window: Window,
+    startupAction: String?,
+    onStartupActionConsumed: () -> Unit,
+) {
     var mode by rememberSaveable { mutableStateOf(LightMode.STEADY) }
     var brightness by rememberSaveable { mutableFloatStateOf(1f) }
     var useKelvin by rememberSaveable { mutableStateOf(true) }
@@ -126,13 +148,49 @@ fun FillLightScreen(window: Window) {
     var panelVisible by rememberSaveable { mutableStateOf(true) }
     // 灯面渲染风格：拟真=中心亮四角暗的光衰减，纯色=平涂满屏
     var realistic by rememberSaveable { mutableStateOf(true) }
+    // 双击灯面锁定：锁定时单击不再呼出面板，防误触
+    var locked by rememberSaveable { mutableStateOf(false) }
+    var lockToast by remember { mutableStateOf<String?>(null) }
+    // 定时关灯：0=未设定；timerEndAt 为结束时刻（epoch ms），到点渐隐后退出
+    var timerMinutes by rememberSaveable { mutableIntStateOf(0) }
+    var timerEndAt by rememberSaveable { mutableLongStateOf(0L) }
+    var remainingMs by remember { mutableLongStateOf(0L) }
+    var timerAlpha by remember { mutableFloatStateOf(1f) }
     // 手指正按在取色轮/色温条上：灯光即时跟随，不做过渡动画
     var picking by remember { mutableStateOf(false) }
 
-    val baseColor = if (useKelvin) kelvinToColor(kelvin) else Color(customColor)
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val view = LocalView.current
+
+    // 流彩模式的色相循环
+    val flowHue by rememberInfiniteTransition(label = "flow").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(14000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "flowHue",
+    )
+    // 呼吸灯的明暗起伏
+    val breathAlpha by rememberInfiniteTransition(label = "breathing").animateFloat(
+        initialValue = 0.10f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1700, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "breathAlpha",
+    )
+
+    val baseColor = when {
+        mode == LightMode.FLOW -> Color.hsv(flowHue, 0.85f, 1f)
+        useKelvin -> kelvinToColor(kelvin)
+        else -> Color(customColor)
+    }
 
     // 沉浸式全屏：隐藏状态栏和导航栏，从屏幕边缘轻滑可临时唤出
-    val view = LocalView.current
     DisposableEffect(window, view) {
         val controller = WindowCompat.getInsetsController(window, view)
         controller.systemBarsBehavior =
@@ -150,7 +208,7 @@ fun FillLightScreen(window: Window) {
     var lightOn by remember { mutableStateOf(true) }
     LaunchedEffect(mode, strobeHz) {
         when (mode) {
-            LightMode.STEADY, LightMode.BREATHING -> lightOn = true
+            LightMode.STEADY, LightMode.BREATHING, LightMode.FLOW -> lightOn = true
             LightMode.STROBE -> {
                 var on = true
                 while (true) {
@@ -170,33 +228,84 @@ fun FillLightScreen(window: Window) {
         }
     }
 
-    // 呼吸灯的明暗起伏
-    val breathing = rememberInfiniteTransition(label = "breathing")
-    val breathAlpha by breathing.animateFloat(
-        initialValue = 0.10f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1700, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "breathAlpha",
-    )
-    val lightAlpha = if (mode == LightMode.BREATHING) breathAlpha else if (lightOn) 1f else 0f
+    // 定时关灯倒计时：每 0.5s 刷新剩余，到点渐隐 2.5s 后退出应用
+    LaunchedEffect(timerEndAt) {
+        if (timerEndAt == 0L) {
+            remainingMs = 0L
+            timerAlpha = 1f
+            return@LaunchedEffect
+        }
+        timerAlpha = 1f
+        while (true) {
+            val remain = timerEndAt - System.currentTimeMillis()
+            if (remain <= 0L) break
+            remainingMs = remain
+            delay(500)
+        }
+        remainingMs = 0L
+        val fade = Animatable(1f)
+        fade.animateTo(0f, tween(2500))
+        (context as? Activity)?.finish()
+    }
+    val remainingText = if (timerEndAt != 0L) formatRemaining(remainingMs) else "--"
+
+    // 桌面快捷方式直达
+    LaunchedEffect(startupAction) {
+        when (startupAction) {
+            MainActivity.ACTION_SOS -> {
+                mode = LightMode.SOS
+                panelVisible = false
+            }
+            MainActivity.ACTION_NIGHT -> {
+                mode = LightMode.STEADY
+                useKelvin = true
+                kelvin = 1850
+                brightness = 0.35f
+                panelVisible = false
+            }
+        }
+        if (startupAction != null) onStartupActionConsumed()
+    }
+
+    val lightAlpha =
+        (if (mode == LightMode.BREATHING) breathAlpha else if (lightOn) 1f else 0f) * timerAlpha
 
     val lightColor by animateColorAsState(
         targetValue = baseColor,
-        animationSpec = if (picking) snap() else tween(220),
+        animationSpec = if (picking || mode == LightMode.FLOW) snap() else tween(220),
         label = "lightColor",
     )
 
     BackHandler(enabled = panelVisible) { panelVisible = false }
+
+    // 锁定提示自动消失
+    LaunchedEffect(lockToast) {
+        if (lockToast != null) {
+            delay(2000)
+            lockToast = null
+        }
+    }
 
     Box(
         Modifier
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(Unit) {
-                detectTapGestures { panelVisible = !panelVisible }
+                detectTapGestures(
+                    onTap = {
+                        if (locked) {
+                            lockToast = "已锁定 · 双击解锁"
+                        } else {
+                            panelVisible = !panelVisible
+                        }
+                    },
+                    onDoubleTap = {
+                        locked = !locked
+                        lockToast = if (locked) "已锁定 · 双击解锁" else "已解锁"
+                        if (locked) panelVisible = false
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    },
+                )
             }
     ) {
         // 灯面：拟真模式下中心亮、四角稍暗，模拟真实灯面的光衰减
@@ -230,9 +339,32 @@ fun FillLightScreen(window: Window) {
             }
         }
 
+        // 锁定/解锁提示
+        AnimatedVisibility(
+            visible = lockToast != null,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 110.dp),
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(300)),
+        ) {
+            Row(
+                Modifier
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .padding(horizontal = 14.dp, vertical = 7.dp)
+            ) {
+                Text(
+                    lockToast.orEmpty(),
+                    color = Color.White.copy(alpha = 0.92f),
+                    fontSize = 12.sp,
+                )
+            }
+        }
+
         // 面板收起后的短暂提示
         AnimatedVisibility(
-            visible = !panelVisible,
+            visible = !panelVisible && !locked,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 56.dp),
@@ -267,6 +399,13 @@ fun FillLightScreen(window: Window) {
                 onStrobeHz = { strobeHz = it },
                 realistic = realistic,
                 onRealistic = { realistic = it },
+                timerMinutes = timerMinutes,
+                remainingText = remainingText,
+                onTimer = { minutes ->
+                    timerMinutes = minutes
+                    timerEndAt = if (minutes == 0) 0L else System.currentTimeMillis() + minutes * 60_000L
+                    if (minutes != 0) remainingMs = minutes * 60_000L
+                },
                 onPicking = { picking = it },
             )
         }
@@ -289,8 +428,14 @@ private fun ControlPanel(
     onStrobeHz: (Float) -> Unit,
     realistic: Boolean,
     onRealistic: (Boolean) -> Unit,
+    timerMinutes: Int,
+    remainingText: String,
+    onTimer: (Int) -> Unit,
     onPicking: (Boolean) -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val clipboard = LocalClipboardManager.current
+    val toastContext = LocalContext.current
     val focusState = remember { PanelFocusState() }
     var showKelvinEditor by rememberSaveable { mutableStateOf(false) }
     CompositionLocalProvider(LocalPanelFocus provides focusState) {
@@ -302,6 +447,7 @@ private fun ControlPanel(
                     Brush.verticalGradient(listOf(Color(0xF3141418), Color(0xF70A0A0E)))
                 )
                 .border(1.dp, PanelBorder, PanelShape)
+                .verticalScroll(rememberScrollState())
                 // 吞掉面板区域的点按，避免误触收起
                 .pointerInput(Unit) { detectTapGestures { } }
                 .navigationBarsPadding()
@@ -358,59 +504,93 @@ private fun ControlPanel(
                     }
                 }
             }
+            Spacer(Modifier.height(10.dp))
+
+            // 定时关灯
+            Box(Modifier.fillMaxWidth().focusBlur("timer")) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("定时", color = PanelDimText, fontSize = 12.sp, modifier = Modifier.width(40.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Row(
+                        Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Pill("关", timerMinutes == 0, { onTimer(0) }, compact = true)
+                        Pill("15 分", timerMinutes == 15, { onTimer(15) }, compact = true)
+                        Pill("30 分", timerMinutes == 30, { onTimer(30) }, compact = true)
+                        Pill("60 分", timerMinutes == 60, { onTimer(60) }, compact = true)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        remainingText,
+                        style = NumericStyle,
+                        color = if (timerMinutes > 0) PanelText else PanelDimText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(44.dp),
+                    )
+                }
+            }
             Spacer(Modifier.height(12.dp))
             SectionDivider()
             Spacer(Modifier.height(12.dp))
 
+            if (mode != LightMode.FLOW) {
+                Box(Modifier.fillMaxWidth().focusBlur("sources")) {
+                    Column {
+                        // 光色来源：色温 / 彩色
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Pill(
+                                label = "色温",
+                                selected = useKelvin,
+                                onClick = { onUseKelvin(true) },
+                                swatch = {
+                                    Box(
+                                        Modifier
+                                            .size(width = 14.dp, height = 8.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(
+                                                        Color(0xFFFF9A3C),
+                                                        Color(0xFFF4F4F6),
+                                                        Color(0xFFBFD9FF),
+                                                    )
+                                                )
+                                            )
+                                    )
+                                },
+                            )
+                            Pill(
+                                label = "彩色",
+                                selected = !useKelvin,
+                                onClick = { onUseKelvin(false) },
+                                swatch = {
+                                    Box(
+                                        Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                Brush.sweepGradient(
+                                                    listOf(
+                                                        Color.Red, Color.Yellow, Color.Green,
+                                                        Color.Cyan, Color.Blue, Color.Magenta, Color.Red,
+                                                    )
+                                                )
+                                            )
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            // 灯面风格：纯色 / 拟真（流彩模式下依然生效）
             Box(Modifier.fillMaxWidth().focusBlur("sources")) {
                 Column {
-                    // 光色来源：色温 / 彩色
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Pill(
-                            label = "色温",
-                            selected = useKelvin,
-                            onClick = { onUseKelvin(true) },
-                            swatch = {
-                                Box(
-                                    Modifier
-                                        .size(width = 14.dp, height = 8.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            Brush.horizontalGradient(
-                                                listOf(
-                                                    Color(0xFFFF9A3C),
-                                                    Color(0xFFF4F4F6),
-                                                    Color(0xFFBFD9FF),
-                                                )
-                                            )
-                                        )
-                                )
-                            },
-                        )
-                        Pill(
-                            label = "彩色",
-                            selected = !useKelvin,
-                            onClick = { onUseKelvin(false) },
-                            swatch = {
-                                Box(
-                                    Modifier
-                                        .size(10.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            Brush.sweepGradient(
-                                                listOf(
-                                                    Color.Red, Color.Yellow, Color.Green,
-                                                    Color.Cyan, Color.Blue, Color.Magenta, Color.Red,
-                                                )
-                                            )
-                                        )
-                                )
-                            },
-                        )
-                    }
-                    Spacer(Modifier.height(12.dp))
-
-                    // 灯面风格：纯色 / 拟真
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Pill(
                             label = "纯色",
@@ -448,7 +628,16 @@ private fun ControlPanel(
             }
             Spacer(Modifier.height(14.dp))
 
-            if (useKelvin) {
+            if (mode == LightMode.FLOW) {
+                Text(
+                    "色彩随时间流动，可切换灯面风格",
+                    color = PanelDimText.copy(alpha = 0.6f),
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 8.dp),
+                )
+            } else if (useKelvin) {
                 Box(Modifier.fillMaxWidth().focusBlur("kelvin")) {
                     Column {
                         Row(
@@ -527,13 +716,22 @@ private fun ControlPanel(
                         )
                         Spacer(Modifier.height(8.dp))
                         val argb = customColor.toArgb()
+                        val hexText = String.format(Locale.US, "#%06X", argb and 0xFFFFFF)
                         Text(
-                            String.format(Locale.US, "#%06X", argb and 0xFFFFFF),
+                            hexText,
                             style = NumericStyle,
                             color = PanelDimText,
                             fontSize = 11.sp,
                             letterSpacing = 1.sp,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .clip(CircleShape)
+                                .clickable {
+                                    clipboard.setText(AnnotatedString(hexText))
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    Toast.makeText(toastContext, "已复制 $hexText", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(horizontal = 10.dp, vertical = 2.dp),
                         )
                         Spacer(Modifier.height(12.dp))
                         LazyRow(
@@ -576,6 +774,11 @@ private fun KelvinInputDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf(current.toString()) }
+    val submit = {
+        val v = text.toIntOrNull()
+        if (v != null) onConfirm(v.coerceIn(1500, 9000)) else onDismiss()
+        Unit
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("输入色温") },
@@ -584,7 +787,11 @@ private fun KelvinInputDialog(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it.filter { c -> c.isDigit() }.take(4) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done,
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { submit() }),
                     suffix = { Text("K", color = PanelDimText) },
                     singleLine = true,
                 )
@@ -597,10 +804,7 @@ private fun KelvinInputDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                val v = text.toIntOrNull()
-                if (v != null) onConfirm(v.coerceIn(1500, 9000)) else onDismiss()
-            }) { Text("确定") }
+            TextButton(onClick = { submit() }) { Text("确定") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("取消") }
@@ -694,7 +898,7 @@ private fun ModePills(
     }
 }
 
-/** 胶囊滑条：粗圆轨道 + 白色手柄；按住时放大并通知景深焦点 */
+/** 胶囊滑条：粗圆轨道 + 可选手柄；按住时放大并通知景深焦点 */
 @Composable
 private fun CapsuleSlider(
     value: Float,
@@ -806,6 +1010,8 @@ private fun Pill(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
     swatch: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -826,9 +1032,9 @@ private fun Pill(
         label = "pillFg",
     )
     Row(
-        Modifier
+        modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .height(32.dp)
+            .height(if (compact) 28.dp else 32.dp)
             .clip(CircleShape)
             .background(bg)
             .border(
@@ -854,12 +1060,15 @@ private fun Pill(
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }
-            .padding(start = 11.dp, end = 13.dp),
+            .padding(
+                start = if (compact) 9.dp else 11.dp,
+                end = if (compact) 10.dp else 13.dp,
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         swatch?.invoke()
-        Text(label, color = fg, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = fg, fontSize = if (compact) 11.sp else 12.sp, fontWeight = FontWeight.Medium)
     }
 }
 

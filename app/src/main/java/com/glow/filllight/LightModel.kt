@@ -9,6 +9,7 @@ enum class LightMode(val label: String) {
     STEADY("常亮"),
     STROBE("频闪"),
     BREATHING("呼吸"),
+    FLOW("流彩"),
     SOS("SOS"),
 }
 
