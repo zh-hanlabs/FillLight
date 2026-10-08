@@ -72,6 +72,7 @@ internal fun ControlPanel(
     onPicking: (Boolean) -> Unit,
     onEnterPiP: (() -> Unit)? = null,
     onLock: (() -> Unit)? = null,
+    onCheckUpdate: (() -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val clipboard = LocalClipboardManager.current
@@ -110,6 +111,14 @@ internal fun ControlPanel(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (onCheckUpdate != null) {
+                        Pill(
+                            label = "更新",
+                            selected = false,
+                            onClick = onCheckUpdate,
+                            compact = true,
+                        )
+                    }
                     if (onEnterPiP != null) {
                         Pill(
                             label = "画中画",
@@ -416,6 +425,18 @@ internal fun ControlPanel(
                     }
                 }
             }
+
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "FillLight v1.0.4 · 检查更新",
+                color = PanelDimText.copy(alpha = 0.5f),
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clip(CircleShape)
+                    .clickable { onCheckUpdate?.invoke() }
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+            )
         }
     }
 

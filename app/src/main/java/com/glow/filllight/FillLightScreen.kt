@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,7 +56,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import android.widget.Toast
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -67,6 +70,7 @@ fun FillLightScreen(
     isPiPMode: Boolean = false,
     onEnterPiP: (() -> Unit)? = null,
 ) {
+    val currentVersion = "1.0.4"
     var mode by rememberSaveable { mutableStateOf(LightMode.STEADY) }
     var brightness by rememberSaveable { mutableFloatStateOf(1f) }
     var useKelvin by rememberSaveable { mutableStateOf(true) }
@@ -92,6 +96,10 @@ fun FillLightScreen(
     var hudVisible by remember { mutableStateOf(false) }
     var lastDragEndTime by remember { mutableLongStateOf(0L) }
 
+    // 检查更新状态与弹窗
+    var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
@@ -231,6 +239,34 @@ fun FillLightScreen(
             delay(900)
             hudVisible = false
         }
+    }
+
+    fun triggerCheckUpdate(manual: Boolean) {
+        if (isCheckingUpdate) return
+        isCheckingUpdate = true
+        if (manual) {
+            Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
+        }
+        coroutineScope.launch {
+            val result = UpdateChecker.checkUpdate(currentVersion)
+            isCheckingUpdate = false
+            result.onSuccess { info ->
+                if (info.isNewVersion) {
+                    updateInfo = info
+                } else if (manual) {
+                    Toast.makeText(context, "当前已是最新版本 (v$currentVersion)", Toast.LENGTH_SHORT).show()
+                }
+            }.onFailure {
+                if (manual) {
+                    Toast.makeText(context, "检查更新失败，请检查网络", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // 启动时静默检查更新
+    LaunchedEffect(Unit) {
+        triggerCheckUpdate(manual = false)
     }
 
     Box(
@@ -387,8 +423,17 @@ fun FillLightScreen(
                         panelVisible = false
                         lockToast = "已锁定 · 双击解锁"
                     },
+                    onCheckUpdate = { triggerCheckUpdate(manual = true) },
                 )
             }
         }
+    }
+
+    if (updateInfo != null) {
+        UpdateDialog(
+            updateInfo = updateInfo!!,
+            currentVersion = currentVersion,
+            onDismiss = { updateInfo = null },
+        )
     }
 }

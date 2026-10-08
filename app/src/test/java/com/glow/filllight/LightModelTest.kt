@@ -69,4 +69,20 @@ class LightModelTest {
         assertEquals("30:00", formatRemaining(30 * 60_000L))
         assertEquals("60:00", formatRemaining(60 * 60_000L))
     }
+
+    @Test
+    fun testIsVersionNewer() {
+        // 远端更高
+        assertTrue(isVersionNewer("v1.0.5", "1.0.4"))
+        assertTrue(isVersionNewer("1.1.0", "1.0.4"))
+        assertTrue(isVersionNewer("v2.0.0", "1.0.4"))
+        assertTrue(isVersionNewer("v1.0.4.1", "1.0.4"))
+
+        // 远端相同或更低
+        org.junit.Assert.assertFalse(isVersionNewer("v1.0.4", "1.0.4"))
+        org.junit.Assert.assertFalse(isVersionNewer("1.0.4", "1.0.4"))
+        org.junit.Assert.assertFalse(isVersionNewer("v1.0.3", "1.0.4"))
+        org.junit.Assert.assertFalse(isVersionNewer("v0.9.9", "1.0.4"))
+    }
 }
+
