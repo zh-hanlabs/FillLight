@@ -74,7 +74,7 @@ fun ColorWheel(
     Box(
         modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(6.dp, CircleShape)
+            .shadow(6.dp, CircleShape, clip = false)
             .onSizeChanged { boxSize = it }
             .pointerInput(Unit) {
                 detectTapGestures(

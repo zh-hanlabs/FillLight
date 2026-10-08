@@ -76,6 +76,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -536,11 +537,15 @@ private fun ControlPanel(
             SectionDivider()
             Spacer(Modifier.height(12.dp))
 
-            if (mode != LightMode.FLOW) {
-                Box(Modifier.fillMaxWidth().focusBlur("sources")) {
-                    Column {
-                        // 光色来源：色温 / 彩色
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // 选项栏：光色来源（色温 / 彩色）与 灯面风格（纯色 / 拟真）同排在同一行，大幅提升下边界留白
+            Box(Modifier.fillMaxWidth().focusBlur("sources")) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (mode != LightMode.FLOW) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Pill(
                                 label = "色温",
                                 selected = useKelvin,
@@ -583,15 +588,10 @@ private fun ControlPanel(
                                 },
                             )
                         }
+                    } else {
+                        Spacer(Modifier.width(1.dp))
                     }
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-
-            // 灯面风格：纯色 / 拟真（流彩模式下依然生效）
-            Box(Modifier.fillMaxWidth().focusBlur("sources")) {
-                Column {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Pill(
                             label = "纯色",
                             selected = !realistic,
@@ -626,7 +626,7 @@ private fun ControlPanel(
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (mode == LightMode.FLOW) {
                 Text(
@@ -711,7 +711,7 @@ private fun ControlPanel(
                             onPicking = onPicking,
                             onFocus = { f -> focusState.id = if (f) "wheel" else null },
                             modifier = Modifier
-                                .size(200.dp)
+                                .size(140.dp)
                                 .align(Alignment.CenterHorizontally),
                         )
                         Spacer(Modifier.height(8.dp))
@@ -1081,7 +1081,13 @@ private fun Modifier.focusBlur(id: String): Modifier {
     val dim by animateFloatAsState(if (active) 0.65f else 1f, tween(220), label = "dim$id")
     return this
         .graphicsLayer { alpha = dim }
-        .blur(radius.dp)
+        .then(
+            if (radius > 0.05f) {
+                Modifier.blur(radius.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+            } else {
+                Modifier
+            }
+        )
 }
 
 @Composable

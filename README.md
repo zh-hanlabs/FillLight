@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="https://github.com/zh-hanlabs/FillLight/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/zh-hanlabs/FillLight?style=social"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.2-FB6511"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.2"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.3-FB6511"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.3"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
   <a href="https://kotlinlang.org/"><img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white"></a>
   <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-1.7-4285F4?logo=jetpackcompose&logoColor=white"></a>
   <a href="https://developer.android.com/about/versions/oreo"><img alt="MinSdk" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"></a>
@@ -140,7 +140,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 📥 下载安装
 
-前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.2-debug.apk`）：
+前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.3-debug.apk`）：
 
 - 要求 **Android 8.0（API 26）** 及以上
 - debug 签名包，下载后点开安装即可
@@ -150,6 +150,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 | 版本 | 日期 | 说明 |
 |---|---|---|
+| v1.0.3 | 2026-10-08 | 修复取色轮按压缩放被容器边缘裁剪平切的问题；合并光色/灯面选项栏，优化面板纵向留白与圆盘尺寸比例 |
 | v1.0.2 | 2026-10-07 | 流彩模式 / 定时关灯 / 双击锁定 / 图标快捷方式（SOS·夜灯）/ 锁竖屏 / 面板滚动兜底 / HEX 复制 / 键盘「完成」提交 |
 | v1.0.1 | 2026-10-07 | 色温 K 值手动输入；亮度/频率滑条去手柄（胶囊填充即指示）；修复手柄端点越界与对比度 |
 | v1.0.0 | 2026-10-07 | 首版：全屏补光 / 色温 / 取色轮 / 氛围预设 / 四种灯光模式 / 纯色·拟真灯面 / 玻璃景深面板 / 沉浸式全屏 / 磁贴+小组件 |
