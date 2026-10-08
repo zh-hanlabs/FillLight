@@ -65,3 +65,14 @@ val sosPattern: List<Pair<Boolean, Int>> = buildList {
     repeat(2) { on(dash); off(symbolGap) }; on(dash); off(letterGap)    // O
     repeat(2) { on(dot); off(symbolGap) }; on(dot); off(1800)           // S + 停顿
 }
+
+val ColorSaver: androidx.compose.runtime.saveable.Saver<Color, Long> = androidx.compose.runtime.saveable.Saver(
+    save = { it.value.toLong() },
+    restore = { Color(it.toULong()) }
+)
+
+fun formatRemaining(ms: Long): String {
+    val total = ((ms + 999) / 1000).toInt().coerceAtLeast(0)
+    return String.format(java.util.Locale.US, "%d:%02d", total / 60, total % 60)
+}
+

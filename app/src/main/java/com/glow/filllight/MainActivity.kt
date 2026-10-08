@@ -1,10 +1,14 @@
 package com.glow.filllight
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
+import android.util.Rational
 import android.view.Window
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +24,9 @@ class MainActivity : ComponentActivity() {
     /** 桌面快捷方式 / 外部 action 携带的启动指令，由界面消费后清空 */
     private var startupAction by mutableStateOf<String?>(null)
 
+    /** 是否处于画中画（PiP）悬浮窗模式 */
+    private var isPiPMode by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -32,7 +39,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         startupAction = intent?.action?.takeIf { it.startsWith(ACTION_PREFIX) }
-        val window: Window = window
+        val currentWindow: Window = window
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
@@ -43,9 +50,11 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 FillLightScreen(
-                    window = window,
+                    window = currentWindow,
                     startupAction = startupAction,
                     onStartupActionConsumed = { startupAction = null },
+                    isPiPMode = isPiPMode,
+                    onEnterPiP = if (hasPiPSupport()) { { enterPiP() } } else null,
                 )
             }
         }
@@ -54,6 +63,28 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         startupAction = intent.action?.takeIf { it.startsWith(ACTION_PREFIX) }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isPiPMode = isInPictureInPictureMode
+    }
+
+    private fun hasPiPSupport(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+    }
+
+    private fun enterPiP() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasPiPSupport()) {
+            val params = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(1, 1))
+                .build()
+            enterPictureInPictureMode(params)
+        }
     }
 
     companion object {

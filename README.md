@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="https://github.com/zh-hanlabs/FillLight/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/zh-hanlabs/FillLight?style=social"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.3-FB6511"></a>
-  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.3"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases"><img alt="Version" src="https://img.shields.io/badge/version-v1.0.4-FB6511"></a>
+  <a href="https://github.com/zh-hanlabs/FillLight/releases/tag/v1.0.4"><img alt="Download APK" src="https://img.shields.io/badge/download-APK-2EA44F?logo=github&logoColor=white"></a>
   <a href="https://kotlinlang.org/"><img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white"></a>
   <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-1.7-4285F4?logo=jetpackcompose&logoColor=white"></a>
   <a href="https://developer.android.com/about/versions/oreo"><img alt="MinSdk" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"></a>
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  🌡️ 色温 1500K–9000K · 🎨 HSV 取色轮 · ✨ 拟真光衰减 · ⚡ 频闪 · 🫁 呼吸 · 🌈 流彩 · 🆘 SOS · ⏱️ 定时关灯 · 🧩 磁贴+小组件 · 🔒 零权限零网络
+  🌡️ 色温 1500K–9000K · 🎨 HSV 取色轮 · ✨ 拟真光衰减 · ⚡ 频闪 · 🫁 呼吸 · 🌈 流彩 · 🆘 SOS · 📺 画中画补光 · ⏱️ 定时关灯 · 🧩 磁贴+小组件 · 🔒 零权限零网络
 </p>
 
 <p align="center">
@@ -48,7 +48,9 @@
 | 氛围色预设 | 樱花粉、日落橙、蜜桃、薄荷绿、海盐蓝、薰衣草、青柠、玫瑰金，一键切换 |
 | 五种灯光模式 | 常亮 / 频闪（0.5–10 Hz 可调）/ 呼吸（明暗起伏）/ 流彩（色相 14s 循环流动的彩虹灯）/ SOS（标准摩尔斯节奏求救灯） |
 | 定时关灯 | 15 / 30 / 60 分钟倒计时（实时显示剩余），到点渐隐 2.5s 后自动退出——夜灯场景不怕亮一夜 |
-| 防误触锁定 | 双击灯面锁定/解锁；锁定时单击不弹面板，补光时手机立着也不怕误碰 |
+| 画中画补光 | **原生免权限 PiP**：一键缩小为悬浮发光小窗，边开系统相机/微信视频边打光，自拍神器 |
+| 纯灯面手势 | 收起面板后，屏幕**上下滑调亮度、左右滑调色温**，中央 HUD 胶囊实时读数，盲操顺手 |
+| 防误触锁定 | 双击灯面或点击面板「锁定」；锁定时单击不弹面板，补光时手机立着也不怕误碰 |
 | 两种灯面风格 | **拟真**：中心亮、四角暗的真实光衰减；**纯色**：平涂满屏（手电/最高照度场景） |
 | 玻璃景深面板 | 全自绘控件（胶囊滑条 / 滑块模式切换器 / 预设胶囊）；按住任意控件弹性放大，其余区块虚化压暗退焦，松手回焦 |
 | 实时跟色 | 按住取色轮或色温条时灯光零延迟跟随（动画切即时模式），松手、点预设恢复平滑过渡 |
@@ -140,7 +142,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 📥 下载安装
 
-前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.3-debug.apk`）：
+前往 [Releases](https://github.com/zh-hanlabs/FillLight/releases) 下载最新 APK（当前 `FillLight-v1.0.4-debug.apk`）：
 
 - 要求 **Android 8.0（API 26）** 及以上
 - debug 签名包，下载后点开安装即可
@@ -150,6 +152,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 | 版本 | 日期 | 说明 |
 |---|---|---|
+| v1.0.4 | 2026-10-08 | 渲染性能重构（推迟状态读取，杜绝频闪/呼吸/流彩重组发热）；支持画中画（PiP）悬浮窗补光；纯灯面上下滑调光、左右滑调温手势与 HUD；单文件模块化拆分与单元测试；Release 构建开启 R8 混淆与资源缩减（体积缩减 ~90%） |
 | v1.0.3 | 2026-10-08 | 修复取色轮按压缩放被容器边缘裁剪平切的问题；合并光色/灯面选项栏，优化面板纵向留白与圆盘尺寸比例 |
 | v1.0.2 | 2026-10-07 | 流彩模式 / 定时关灯 / 双击锁定 / 图标快捷方式（SOS·夜灯）/ 锁竖屏 / 面板滚动兜底 / HEX 复制 / 键盘「完成」提交 |
 | v1.0.1 | 2026-10-07 | 色温 K 值手动输入；亮度/频率滑条去手柄（胶囊填充即指示）；修复手柄端点越界与对比度 |
