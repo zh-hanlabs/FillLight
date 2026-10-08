@@ -241,32 +241,23 @@ fun FillLightScreen(
         }
     }
 
-    fun triggerCheckUpdate(manual: Boolean) {
+    fun triggerCheckUpdate() {
         if (isCheckingUpdate) return
         isCheckingUpdate = true
-        if (manual) {
-            Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
-        }
+        Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
         coroutineScope.launch {
             val result = UpdateChecker.checkUpdate(currentVersion)
             isCheckingUpdate = false
             result.onSuccess { info ->
                 if (info.isNewVersion) {
                     updateInfo = info
-                } else if (manual) {
+                } else {
                     Toast.makeText(context, "当前已是最新版本 (v$currentVersion)", Toast.LENGTH_SHORT).show()
                 }
             }.onFailure {
-                if (manual) {
-                    Toast.makeText(context, "检查更新失败，请检查网络", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(context, "检查更新失败，请检查网络", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    // 启动时静默检查更新
-    LaunchedEffect(Unit) {
-        triggerCheckUpdate(manual = false)
     }
 
     Box(
@@ -423,7 +414,7 @@ fun FillLightScreen(
                         panelVisible = false
                         lockToast = "已锁定 · 双击解锁"
                     },
-                    onCheckUpdate = { triggerCheckUpdate(manual = true) },
+                    onCheckUpdate = { triggerCheckUpdate() },
                 )
             }
         }

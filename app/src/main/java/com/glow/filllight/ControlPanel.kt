@@ -111,14 +111,6 @@ internal fun ControlPanel(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (onCheckUpdate != null) {
-                        Pill(
-                            label = "更新",
-                            selected = false,
-                            onClick = onCheckUpdate,
-                            compact = true,
-                        )
-                    }
                     if (onEnterPiP != null) {
                         Pill(
                             label = "画中画",
